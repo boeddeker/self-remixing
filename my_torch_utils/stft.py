@@ -15,6 +15,7 @@ import numpy as np
 import torch
 from packaging.version import parse as V
 
+is_torch_2_0_plus = V(torch.__version__) >= V("2.0.0")
 is_torch_1_10_plus = V(torch.__version__) >= V("1.10.0")
 is_torch_1_9_plus = V(torch.__version__) >= V("1.9.0")
 is_torch_1_7_plus = V(torch.__version__) >= V("1.7")
@@ -484,10 +485,15 @@ class Stft(torch.nn.Module):
         else:
             window = None
 
-        if torch.is_complex(input):
-            input = torch.stack([input.real, input.imag], dim=-1)
-        elif input.shape[-1] != 2:
-            raise TypeError("Invalid input type")
+        if is_torch_2_0_plus:
+            # https://docs.pytorch.org/docs/stable/generated/torch.istft.html:
+            #   Warning: Changed in version 2.0: Real datatype inputs are no longer supported. Input must now have a complex datatype, as returned by stft(..., return_complex=True).
+            assert torch.is_complex(input), "Only support complex tensors for stft inverse"
+        else:
+            if torch.is_complex(input):
+                input = torch.stack([input.real, input.imag], dim=-1)
+            elif input.shape[-1] != 2:
+                raise TypeError("Invalid input type")
         input = input.transpose(1, 2)
 
         wavs = istft(

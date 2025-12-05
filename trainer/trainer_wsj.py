@@ -159,7 +159,7 @@ class WSJTrainer(AbsTrainer):
                     y_student = self.separator(mix)
                 else:
                     y_student, loss = self.compute_loss(mix)
-                loss = loss.cpu().detach().numpy()
+                loss = loss.cpu().detach().item()
                 loss_total += loss
 
                 if self.algo == "mixit":
